@@ -21,8 +21,48 @@ void help_msg(char * progname)
     progname );
 }
 
-void send_notification(char * title, char * subtitle, char * infotext,
-        char * soundname)
+CFStringRef c_cfstr(char * str) {
+
+    return CFStringCreateWithCString(NULL, str, kCFStringEncodingMacRoman);
+}
+
+CFStringRef arg_to_cfstr(char **argv, uintptr_t *i, uintptr_t argc) {
+    char *c_str = calloc(sizeof(char), 150);
+    while(*i != (argc-1) && argv[++*i][0] != '-'){
+        strcat(c_str, argv[*i]);
+        strcat(c_str, " ");
+    }
+    --*i;
+    CFStringRef ret_str = c_cfstr(c_str);
+    free(c_str);    
+    return ret_str;  
+}
+
+void objc_swizzle(Class class, char *sel, Method method) {
+    class_replaceMethod(class,
+                        sel_registerName(sel),
+                        method_getImplementation(method),
+                        NULL);
+}
+
+void set_bundle_id() {
+    Method method = (Method)^{return CFSTR("com.apple.finder");};
+    objc_swizzle(objc_getClass("NSBundle"), "bundleIdentifier", method);
+}
+
+id init_notification_center() {
+    return objc_msgSend((id)objc_getClass("NSUserNotificationCenter"),
+                                  sel_registerName("defaultUserNotificationCenter"));
+}
+
+id init_notification() {
+    return objc_msgSend((id)objc_getClass("NSUserNotification"),
+                            sel_registerName("alloc"),
+                            sel_registerName("init"));
+}
+
+void send_notification(CFStringRef title, CFStringRef subtitle, CFStringRef info_text,
+        CFStringRef sound_name)
 {
     id pool = (id)objc_getClass("NSAutoreleasePool");
     
@@ -30,63 +70,27 @@ void send_notification(char * title, char * subtitle, char * infotext,
                         sel_registerName("alloc"),
                         sel_registerName("init"));
     
-    Class bundle = objc_getClass("NSBundle");
+    set_bundle_id();
+    id notifCenter = init_notification_center();
+    id notif = init_notification();
+    
+    if (title != NULL) {
+        objc_msgSend(notif, sel_registerName("setTitle:"), title);
+        CFRelease(title);
+    }
+    if (subtitle != NULL) {
+        objc_msgSend(notif, sel_registerName("setSubtitle:"), subtitle);
+        CFRelease(subtitle);
+    }
+    if (info_text != NULL) {
+        objc_msgSend(notif, sel_registerName("setInformativeText:"), info_text);
+        CFRelease(info_text);
+    }
+    if (sound_name != NULL) {
+        objc_msgSend(notif, sel_registerName("setSoundName:"), sound_name);
+        CFRelease(sound_name);
+    }
 
-    /** TODO:
-     * this converting char arrays to cfstring could probably be moved 
-     * to a function, something to look into...
-     */
-    char *bytes;
-
-    //Block swizzle 
-    class_replaceMethod(bundle,
-                        sel_registerName("bundleIdentifier"),
-                        method_getImplementation((Method)^{return CFSTR("com.apple.finder");}),
-                        NULL);
-    
-    id notifCenter = objc_msgSend((id)objc_getClass("NSUserNotificationCenter"),
-                                  sel_registerName("defaultUserNotificationCenter"));
-    
-    id notif = objc_msgSend((id)objc_getClass("NSUserNotification"),
-                            sel_registerName("alloc"),
-                            sel_registerName("init"));
-    
-    if ( title != NULL) {
-        CFStringRef strTitle;
-        bytes = CFAllocatorAllocate(CFAllocatorGetDefault(), 6, 0);
-        strcpy(bytes, title);
-        strTitle = CFStringCreateWithCStringNoCopy(NULL, bytes,
-            kCFStringEncodingMacRoman, NULL);
-        objc_msgSend(notif, sel_registerName("setTitle:"), strTitle);
-        CFRelease(strTitle);
-    }
-    if ( subtitle != NULL ) {
-        CFStringRef strSubtitle;
-        bytes = CFAllocatorAllocate(CFAllocatorGetDefault(), 6, 0);
-        strcpy(bytes, subtitle);
-        strSubtitle = CFStringCreateWithCStringNoCopy(NULL, bytes,
-            kCFStringEncodingMacRoman, NULL);
-        objc_msgSend(notif, sel_registerName("setSubtitle:"), strSubtitle);
-        CFRelease(strSubtitle);
-    }
-    if ( infotext != NULL ) {
-        CFStringRef strInfoText;
-        bytes = CFAllocatorAllocate(CFAllocatorGetDefault(), 6, 0);
-        strcpy(bytes, infotext);
-        strInfoText = CFStringCreateWithCStringNoCopy(NULL, bytes,
-            kCFStringEncodingMacRoman, NULL);
-        objc_msgSend(notif, sel_registerName("setInformativeText:"), strInfoText);
-        CFRelease(strInfoText);
-    }
-    if ( soundname != NULL ) {
-        CFStringRef strSoundName;
-        bytes = CFAllocatorAllocate(CFAllocatorGetDefault(), 6, 0);
-        strcpy(bytes, soundname);
-        strSoundName = CFStringCreateWithCStringNoCopy(NULL, bytes,
-            kCFStringEncodingMacRoman, NULL);
-        objc_msgSend(notif, sel_registerName("setSoundName:"), strSoundName);
-        CFRelease(strSoundName);
-    }
     objc_msgSend(notifCenter, sel_registerName("deliverNotification:"), notif);
     
     sleep(1);
@@ -94,39 +98,41 @@ void send_notification(char * title, char * subtitle, char * infotext,
 
 }
 
-int main(int argc, char** argv) 
-{
-    char * userTitle = NULL;
-    char * userSubtitle = NULL;
-    char * userInformativeText = NULL;
-    char * userSoundName = NULL;
+
+int main(int argc, char** argv) {
+    CFStringRef title = NULL;
+    CFStringRef subtitle = NULL;
+    CFStringRef info_text = NULL;
+    CFStringRef sound_name = NULL;
+
+    _Bool has_title = false;
 
     if (argc > 1) {
-        for (int i = 1; i < argc; i++) {
+        for (uintptr_t i = 1; i < argc; i++) {
             if ( !strcmp(argv[i], "-title") ) {
-                i++;
-                userTitle = strdup(argv[i]);           
+                title = arg_to_cfstr(argv, &i, argc);
+                has_title = true;  
             }
             else if ( !strcmp(argv[i], "-subtitle") ) {
-                i++;
-                userSubtitle = strdup(argv[i]);           
+                subtitle = arg_to_cfstr(argv, &i, argc);          
             }
             else if ( !strcmp(argv[i], "-msg") ) {
-                i++;
-                userInformativeText = strdup(argv[i]);            
+                info_text = arg_to_cfstr(argv, &i, argc);
             }
             else if ( !strcmp(argv[i], "-sound") ) {
                 i++;
-                userSoundName = strdup(argv[i]);            
+                sound_name = c_cfstr(argv[i]);            
             }
             else if ( !strcmp(argv[i], "-help") ) {
                 help_msg(argv[0]);            
             }
-            else {
-                printf("Oops, I didn't understand that. %s\n", argv[i]);
-            }
         }
     }
-    send_notification(userTitle, userSubtitle, userInformativeText, userSoundName);
+
+    if(has_title) {
+        send_notification(title, subtitle, info_text, sound_name);
+    } else {
+        puts("You must specify a title or the notification will not post\n");
+    }
     return 0;
 }
