@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
             else if ( !strcmp(argv[i], "-subtitle") ) {
                 subtitle = arg_to_cfstr(argv, &i, argc);          
             }
-            else if ( !strcmp(argv[i], "-msg") ) {
+            else if ( !strcmp(argv[i], "-msg") && info_text == NULL ) {
                 info_text = arg_to_cfstr(argv, &i, argc);
             }
             else if ( !strcmp(argv[i], "-sound") ) {
