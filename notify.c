@@ -1,6 +1,8 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <objc/objc-runtime.h>
+#include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 void help_msg(char * progname)
 {
@@ -106,6 +108,19 @@ int main(int argc, char** argv) {
     CFStringRef sound_name = NULL;
 
     _Bool has_title = false;
+
+    // check for piped data
+    // should it be possible to pipe message data to this?
+    if ( !isatty(STDIN_FILENO) ) {
+        char buf[BUFSIZ];
+        char msg[BUFSIZ];
+        while (fgets(buf, sizeof buf, stdin)) {
+            strcat(msg, buf);
+        }
+        if (msg[strlen(msg)-1] == '\n') {
+            info_text = c_cfstr(msg);
+        }
+    }
 
     if (argc > 1) {
         for (uintptr_t i = 1; i < argc; i++) {
