@@ -1,6 +1,8 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <objc/objc-runtime.h>
+#include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 void help_msg(char * progname)
 {
@@ -105,13 +107,23 @@ int main(int argc, char** argv) {
     CFStringRef info_text = NULL;
     CFStringRef sound_name = NULL;
 
-    _Bool has_title = false;
+    // check for piped data
+    if ( !isatty(STDIN_FILENO) ) {
+        char buf[BUFSIZ];
+        char msg[BUFSIZ];
+        while (fgets(buf, sizeof buf, stdin)) {
+            strcat(msg, buf);
+        }
+        if (msg[strlen(msg)-1] == '\n') {
+            title = c_cfstr("Pipe");
+            info_text = c_cfstr(msg);
+        }
+    }
 
     if (argc > 1) {
         for (uintptr_t i = 1; i < argc; i++) {
             if ( !strcmp(argv[i], "-title") ) {
-                title = arg_to_cfstr(argv, &i, argc);
-                has_title = true;  
+                title = arg_to_cfstr(argv, &i, argc); 
             }
             else if ( !strcmp(argv[i], "-subtitle") ) {
                 subtitle = arg_to_cfstr(argv, &i, argc);          
@@ -129,7 +141,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    if(has_title) {
+    if(title) {
         send_notification(title, subtitle, info_text, sound_name);
     } else {
         puts("You must specify a title or the notification will not post\n");
