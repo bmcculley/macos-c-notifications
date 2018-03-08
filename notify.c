@@ -72,7 +72,7 @@ void set_info_text(id *notif, char * info_text) {
 }
 
 void set_sound_name(id *notif, char * sound_name) {
-    objc_msgSend(*notif, sel_registerName("setSoundName:"), sound_name);
+    objc_msgSend(*notif, sel_registerName("setSoundName:"), c_cfstr(sound_name));
 }
 
 void post_notification(id *notif) {
@@ -90,16 +90,15 @@ _Bool send_notification(char * title, char * subtitle, char * info_text, char * 
     
     id notif = init_notification();
     
-    if (title != NULL) {
-        set_title(&notif, title);
-    }
-    if (subtitle != NULL) {
+    set_title(&notif, title);
+    
+    if (subtitle) {
         set_subtitle(&notif, subtitle);
     }
-    if (info_text != NULL) {
+    if (info_text) {
         set_info_text(&notif, info_text);
     }
-    if (sound_name != NULL) {
+    if (sound_name) {
         set_sound_name(&notif, sound_name);
     }
 
@@ -119,15 +118,19 @@ int main(int argc, char** argv) {
 
     // check for piped data
     if ( !isatty(STDIN_FILENO) ) {
-        char buf[BUFSIZ];
-        char msg[BUFSIZ];
+        char *buf = malloc(BUFSIZ);
+        char *msg = malloc(BUFSIZ);
+        title = calloc(sizeof(char), 5);
+        info_text = calloc(sizeof(char), 350);
         while (fgets(buf, sizeof buf, stdin)) {
             strcat(msg, buf);
         }
         if (msg[strlen(msg)-1] == '\n') {
-            title = "Pipe";
-            info_text = msg;
+            strcat(title, "Pipe");
+            memmove(info_text, msg, sizeof(*msg) * strlen(msg));
         }
+        free(buf);
+        free(msg);
     }
 
     if (argc > 1) {
@@ -146,7 +149,8 @@ int main(int argc, char** argv) {
             }
             else if ( !strcmp(argv[i], "-sound") ) {
                 i++;
-                sound_name = argv[i];            
+                sound_name = calloc(sizeof(char), 100);
+                strcat(sound_name, argv[i]);            
             }
             else if ( !strcmp(argv[i], "-help") ) {
                 help_msg(argv[0]);            
@@ -156,7 +160,7 @@ int main(int argc, char** argv) {
 
     if(title) {
         if(!send_notification(title, subtitle, info_text, sound_name)) {
-            puts("Something has gone terrible wrong.");
+            puts("Something has gone terribly wrong.");
         }
         free(title);
     } else {
