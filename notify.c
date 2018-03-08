@@ -28,6 +28,14 @@ CFStringRef c_cfstr(char * str) {
     return CFStringCreateWithCString(NULL, str, kCFStringEncodingMacRoman);
 }
 
+void concat_args(char *str, char **argv, uintptr_t *i, uintptr_t argc) {
+    while(*i != (argc-1) && argv[++*i][0] != '-'){
+        strcat(str, argv[*i]);
+        strcat(str, " ");
+    }
+    --*i; 
+}
+
 void objc_swizzle(Class class, char *sel, Method method) {
     class_replaceMethod(class,
                         sel_registerName(sel),
@@ -72,7 +80,7 @@ void post_notification(id *notif) {
     objc_msgSend(get_default_user_notif_center(), sel_registerName("deliverNotification:"), *notif);
 }
 
-void send_notification(char * title, char * subtitle, char * info_text, char * sound_name) {
+_Bool send_notification(char * title, char * subtitle, char * info_text, char * sound_name) {
     id pool = (id)objc_getClass("NSAutoreleasePool");
     
     pool = objc_msgSend(pool,
@@ -100,14 +108,7 @@ void send_notification(char * title, char * subtitle, char * info_text, char * s
     sleep(1);
     objc_msgSend(pool, sel_registerName("release"));
 
-}
-
-void concat_args(char *str, char **argv, uintptr_t *i, uintptr_t argc) {
-    while(*i != (argc-1) && argv[++*i][0] != '-'){
-        strcat(str, argv[*i]);
-        strcat(str, " ");
-    }
-    --*i; 
+    return true;
 }
 
 int main(int argc, char** argv) {
@@ -154,9 +155,25 @@ int main(int argc, char** argv) {
     }
 
     if(title) {
-        send_notification(title, subtitle, info_text, sound_name);
+        if(!send_notification(title, subtitle, info_text, sound_name)) {
+            puts("Something has gone terrible wrong.");
+        }
+        free(title);
     } else {
         puts("You must specify a title or the notification will not post\n");
     }
+
+    if(subtitle) {
+        free(subtitle);
+    }
+
+    if(info_text) {
+        free(info_text);
+    }
+
+    if(sound_name) {
+        free(sound_name);
+    }
+
     return 0;
 }
