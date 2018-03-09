@@ -1,6 +1,26 @@
-#include "functions.h"
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
+#include "libCUserNotification.h"
 
+void help_msg(char * progname) {
+    printf("This is a command-line tool to send MacOS User Notifications.\n" \
+    "\n" \
+    "Usage: %s -title title -subtitle subtitle -msg message -sound default\n" \
+    "\n" \
+    "    -help            Display this help message.\n" \
+    "    -title VALUE     The notification title.\n" \
+    "    -subtitle VALUE  The notification subtitle.\n" \
+    "    -msg VALUE       The notification message.\n" \
+    "    -sound VALUE     The name of a sound to play when the notification \n" \
+    "                     appears. The names are listed in Sound Preferences. \n" \
+    "                     Use 'default' for the default notification sound.\n" \
+    "\n" \
+    "The source code for this can be found on github: \n" \
+    "https://github.com/bmcculley/macos-c-notifications\n",
+    progname );
+}
 
 void concat_args(char *str, char **argv, uintptr_t *i, uintptr_t argc) {
     while(*i != (argc-1) && argv[++*i][0] != '-'){
@@ -11,12 +31,6 @@ void concat_args(char *str, char **argv, uintptr_t *i, uintptr_t argc) {
 }
 
 _Bool send_notification(char * title, char * subtitle, char * info_text, char * sound_name) {
-    id pool = (id)objc_getClass("NSAutoreleasePool");
-    
-    pool = objc_msgSend(pool,
-                        sel_registerName("alloc"),
-                        sel_registerName("init"));
-    
     
     id notif = init_notification();
     
@@ -33,9 +47,6 @@ _Bool send_notification(char * title, char * subtitle, char * info_text, char * 
     }
 
     post_notification(&notif);
-    
-    sleep(1);
-    objc_msgSend(pool, sel_registerName("release"));
 
     return true;
 }

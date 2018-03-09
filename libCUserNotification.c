@@ -1,40 +1,22 @@
-#include "functions.h"
+#include "libCUserNotification.h"
 
-void help_msg(char * progname) {
-    printf("This is a command-line tool to send MacOS User Notifications.\n" \
-    "\n" \
-    "Usage: %s -title title -subtitle subtitle -msg message -sound default\n" \
-    "\n" \
-    "    -help            Display this help message.\n" \
-    "    -title VALUE     The notification title.\n" \
-    "    -subtitle VALUE  The notification subtitle.\n" \
-    "    -msg VALUE       The notification message.\n" \
-    "    -sound VALUE     The name of a sound to play when the notification \n" \
-    "                     appears. The names are listed in Sound Preferences. \n" \
-    "                     Use 'default' for the default notification sound.\n" \
-    "\n" \
-    "The source code for this can be found on github: \n" \
-    "https://github.com/bmcculley/macos-c-notifications\n",
-    progname );
-}
-
-CFStringRef c_cfstr(char * str) {
+static CFStringRef c_cfstr(char * str) {
     return CFStringCreateWithCString(NULL, str, kCFStringEncodingMacRoman);
 }
 
-void objc_swizzle(Class class, char *sel, Method method) {
+static void objc_swizzle(Class class, char *sel, Method method) {
     class_replaceMethod(class,
                         sel_registerName(sel),
                         method_getImplementation(method),
                         NULL);
 }
 
-void set_bundle_id() {
+static void set_bundle_id() {
     Method method = (Method)^{return CFSTR("com.apple.finder");};
     objc_swizzle(objc_getClass("NSBundle"), "bundleIdentifier", method);
 }
 
-id get_default_user_notif_center() {
+static id get_default_user_notif_center() {
     return objc_msgSend((id)objc_getClass("NSUserNotificationCenter"),
                                   sel_registerName("defaultUserNotificationCenter"));
 }
@@ -70,6 +52,15 @@ void set_sound_name(id *notif, char * sound_name) {
 }
 
 void post_notification(id *notif) {
+    id pool = (id)objc_getClass("NSAutoreleasePool");
+    
+    pool = objc_msgSend(pool,
+                        sel_registerName("alloc"),
+                        sel_registerName("init"));
+
     set_bundle_id();
     objc_msgSend(get_default_user_notif_center(), sel_registerName("deliverNotification:"), *notif);
+
+    sleep(1);
+    objc_msgSend(pool, sel_registerName("release"));
 }
