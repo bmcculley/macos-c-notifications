@@ -1,5 +1,8 @@
+all: output clean
 output:
-	$(CC) -framework Foundation -o notify notify.c functions.c
+	$(CC) -c -o libCUserNotification.o libCUserNotification.c  
+	ar rcs libCUserNotification.a libCUserNotification.o
+	$(CC) -framework Foundation -o notify notifier.c libCUserNotification.a
 
 clean:
-	rm -f notify
+	rm -f libCUserNotification.o
