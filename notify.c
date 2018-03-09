@@ -60,19 +60,27 @@ id init_notification() {
 }
 
 void set_title(id *notif, char * title) {
-    objc_msgSend(*notif, sel_registerName("setTitle:"), c_cfstr(title));
+    CFStringRef cf_title = c_cfstr(title);
+    objc_msgSend(*notif, sel_registerName("setTitle:"), cf_title);
+    CFRelease(cf_title);
 }
 
 void set_subtitle(id *notif, char * subtitle) {
-    objc_msgSend(*notif, sel_registerName("setSubtitle:"), c_cfstr(subtitle));
+    CFStringRef cf_sub = c_cfstr(subtitle);
+    objc_msgSend(*notif, sel_registerName("setSubtitle:"), cf_sub);
+    CFRelease(cf_sub);
 }
 
 void set_info_text(id *notif, char * info_text) {
-    objc_msgSend(*notif, sel_registerName("setInformativeText:"), c_cfstr(info_text));
+    CFStringRef cf_info = c_cfstr(info_text);
+    objc_msgSend(*notif, sel_registerName("setInformativeText:"), cf_info);
+    CFRelease(cf_info);
 }
 
 void set_sound_name(id *notif, char * sound_name) {
-    objc_msgSend(*notif, sel_registerName("setSoundName:"), c_cfstr(sound_name));
+    CFStringRef cf_sound = c_cfstr(sound_name);
+    objc_msgSend(*notif, sel_registerName("setSoundName:"), cf_sound);
+    CFRelease(cf_sound);
 }
 
 void post_notification(id *notif) {
@@ -135,7 +143,7 @@ int main(int argc, char** argv) {
 
     if (argc > 1) {
         for (uintptr_t i = 1; i < argc; i++) {
-            if ( !strcmp(argv[i], "-title") ) {
+            if ( !strcmp(argv[i], "-title") && !title) {
                 title = calloc(sizeof(char), 100);
                 concat_args(title, argv, &i, argc); 
             }
@@ -143,14 +151,13 @@ int main(int argc, char** argv) {
                 subtitle = calloc(sizeof(char), 150);
                 concat_args(subtitle, argv, &i, argc);          
             }
-            else if ( !strcmp(argv[i], "-msg") && info_text == NULL ) {
+            else if ( !strcmp(argv[i], "-msg") && !info_text) {
                 info_text = calloc(sizeof(char), 350);
                 concat_args(info_text, argv, &i, argc);
             }
-            else if ( !strcmp(argv[i], "-sound") ) {
-                i++;
-                sound_name = calloc(sizeof(char), 100);
-                strcat(sound_name, argv[i]);            
+            else if ( !strcmp(argv[i], "-sound") && i < (argc-1)) {
+                sound_name = calloc(sizeof(char), 150);
+                concat_args(sound_name, argv, &i, argc);  
             }
             else if ( !strcmp(argv[i], "-help") ) {
                 help_msg(argv[0]);            
