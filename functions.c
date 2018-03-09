@@ -19,16 +19,7 @@ void help_msg(char * progname) {
 }
 
 CFStringRef c_cfstr(char * str) {
-
     return CFStringCreateWithCString(NULL, str, kCFStringEncodingMacRoman);
-}
-
-void concat_args(char *str, char **argv, uintptr_t *i, uintptr_t argc) {
-    while(*i != (argc-1) && argv[++*i][0] != '-'){
-        strcat(str, argv[*i]);
-        strcat(str, " ");
-    }
-    --*i; 
 }
 
 void objc_swizzle(Class class, char *sel, Method method) {
@@ -81,34 +72,4 @@ void set_sound_name(id *notif, char * sound_name) {
 void post_notification(id *notif) {
     set_bundle_id();
     objc_msgSend(get_default_user_notif_center(), sel_registerName("deliverNotification:"), *notif);
-}
-
-_Bool send_notification(char * title, char * subtitle, char * info_text, char * sound_name) {
-    id pool = (id)objc_getClass("NSAutoreleasePool");
-    
-    pool = objc_msgSend(pool,
-                        sel_registerName("alloc"),
-                        sel_registerName("init"));
-    
-    
-    id notif = init_notification();
-    
-    set_title(&notif, title);
-    
-    if (subtitle) {
-        set_subtitle(&notif, subtitle);
-    }
-    if (info_text) {
-        set_info_text(&notif, info_text);
-    }
-    if (sound_name) {
-        set_sound_name(&notif, sound_name);
-    }
-
-    post_notification(&notif);
-    
-    sleep(1);
-    objc_msgSend(pool, sel_registerName("release"));
-
-    return true;
 }
