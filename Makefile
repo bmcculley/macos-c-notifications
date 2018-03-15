@@ -30,5 +30,6 @@ test:
 	test -d $(BUILD_DIR)/tests || $(MKDIR_P) $(BUILD_DIR)/tests
 	$(CC) -framework Foundation -o $(BUILD_DIR)/tests/libCUserNotification_test tests/libCUserNotification_test.c $(BUILD_DIR)/static/libCUserNotification.a CFTest/lib/libCFTest.a 
 	rm -rf CFTest/lib
+	./$(BUILD_DIR)/tests/libCUserNotification_test
 
 output: static shared notify test
