@@ -32,22 +32,21 @@ void concat_args(char *str, char **argv, uintptr_t *i, uintptr_t argc) {
 
 _Bool send_notification(char * title, char * subtitle, char * info_text, char * sound_name) {
     
-    id notif = init_notification();
-    
-    set_title(&notif, title);
+    usernotification_t *notif = new_usernotification();
+    set_title(notif, title);
     
     if (subtitle) {
-        set_subtitle(&notif, subtitle);
+        set_subtitle(notif, subtitle);
     }
     if (info_text) {
-        set_info_text(&notif, info_text);
+        set_info_text(notif, info_text);
     }
     if (sound_name) {
-        set_sound_name(&notif, sound_name);
+        set_sound_name(notif, sound_name);
     }
 
-    post_notification(&notif);
-
+    post_notification(notif);
+    free(notif);
     return true;
 }
 
