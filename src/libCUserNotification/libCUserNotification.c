@@ -1,6 +1,6 @@
 #include "libCUserNotification.h"
 
-static CFStringRef c_cfstr(char * str) {
+CFStringRef c_cfstr(char * str) {
     return CFStringCreateWithCString(NULL, str, kCFStringEncodingMacRoman);
 }
 

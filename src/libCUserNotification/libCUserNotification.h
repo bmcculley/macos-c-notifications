@@ -4,6 +4,7 @@
 #include <objc/objc-runtime.h>
 
 id init_notification();
+CFStringRef c_cfstr(char * str);
 void set_title(id *notif, char * title);
 void set_subtitle(id *notif, char * subtitle);
 void set_info_text(id *notif, char * info_text);

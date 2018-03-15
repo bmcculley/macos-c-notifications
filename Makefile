@@ -1,25 +1,35 @@
 MKDIR_P = mkdir -p
 BUILD_DIR = build
 
-all: output clean
+all: output
 
 static:
 	test -d $(BUILD_DIR) || $(MKDIR_P) $(BUILD_DIR)
 	test -d $(BUILD_DIR)/static || $(MKDIR_P) $(BUILD_DIR)/static
-	$(CC) -c -o $(BUILD_DIR)/static/libCUserNotification.o libCUserNotification.c
+	$(CC) -c -o $(BUILD_DIR)/static/libCUserNotification.o src/libCUserNotification/libCUserNotification.c
 	ar rcs $(BUILD_DIR)/static/libCUserNotification.a $(BUILD_DIR)/static/libCUserNotification.o
-	$(CC) -c notifier.c -o $(BUILD_DIR)/notify.o
-	$(CC) -framework Foundation $(BUILD_DIR)/notify.o $(BUILD_DIR)/static/libCUserNotification.a -o notify
+	rm $(BUILD_DIR)/static/libCUserNotification.o
 
 shared:
 	test -d $(BUILD_DIR) || $(MKDIR_P) $(BUILD_DIR)
 	test -d $(BUILD_DIR)/shared || $(MKDIR_P) $(BUILD_DIR)/shared
-	$(CC) -c -fPIC -o $(BUILD_DIR)/shared/libCUserNotification.o libCUserNotification.c
+	$(CC) -c -fPIC -o $(BUILD_DIR)/shared/libCUserNotification.o src/libCUserNotification/libCUserNotification.c
 	$(CC) -framework Foundation -shared $(BUILD_DIR)/shared/libCUserNotification.o -o $(BUILD_DIR)/shared/libCUserNotification.so
-	$(CC) -c notifier.c -o $(BUILD_DIR)/notify.o
-	$(CC) $(BUILD_DIR)/shared/libCUserNotification.so $(BUILD_DIR)/notify.o -o notify
+	rm $(BUILD_DIR)/shared/libCUserNotification.o
 
-output: static
+notify:
+	test -d $(BUILD_DIR) || $(MAKE) static
+	test -d $(BUILD_DIR)/static || $(MAKE) static
+	test -d $(BUILD_DIR)/notifier || $(MKDIR_P) $(BUILD_DIR)/notifier
+	$(CC) -c src/notifier.c -o $(BUILD_DIR)/notifier/notify.o
+	$(CC) -framework Foundation $(BUILD_DIR)/notifier/notify.o $(BUILD_DIR)/static/libCUserNotification.a -o $(BUILD_DIR)/notifier/notify
+	rm -f $(BUILD_DIR)/notifier/notify.o
 
-clean:
-	rm -rf $(BUILD_DIR)
+test:
+	cd CFTest && $(MAKE) lib
+	test -d $(BUILD_DIR)/tests || $(MKDIR_P) $(BUILD_DIR)/tests
+	$(CC) -framework Foundation -o $(BUILD_DIR)/tests/libCUserNotification_test tests/libCUserNotification_test.c $(BUILD_DIR)/static/libCUserNotification.a CFTest/lib/libCFTest.a 
+	rm -rf CFTest/lib
+	./$(BUILD_DIR)/tests/libCUserNotification_test
+
+output: static shared notify test

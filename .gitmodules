@@ -1,0 +1,3 @@
+[submodule "CFTest"]
+	path = CFTest
+	url = https://github.com/jslegendre/CFTest

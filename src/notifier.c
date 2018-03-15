@@ -2,7 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "libCUserNotification.h"
+#include "../src/libCUserNotification/libCUserNotification.h"
 
 void help_msg(char * progname) {
     printf("This is a command-line tool to send MacOS User Notifications.\n" \
