@@ -1,5 +1,7 @@
 # Mac OS User Notifications from C
 
+[![Build Status](https://travis-ci.org/bmcculley/macos-c-notifications.svg?branch=master)](https://travis-ci.org/bmcculley/macos-c-notifications)
+
 This will enable the sending of user notifications from pure C. This repo 
 is setup to send them from the command line.
 
