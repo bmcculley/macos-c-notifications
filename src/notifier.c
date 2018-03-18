@@ -30,7 +30,7 @@ void concat_args(char *str, char **argv, uintptr_t *i, uintptr_t argc) {
     --*i; 
 }
 
-_Bool send_notification(char * title, char * subtitle, char * info_text, char * sound_name) {
+_Bool send_notification(char * title, char * subtitle, char * info_text, char * bundle_id, char * sound_name) {
     
     usernotification_t *notif = new_usernotification();
     set_title(notif, title);
@@ -40,6 +40,9 @@ _Bool send_notification(char * title, char * subtitle, char * info_text, char * 
     }
     if (info_text) {
         set_info_text(notif, info_text);
+    }
+    if (bundle_id) {
+        set_bid(notif, bundle_id);
     }
     if (sound_name) {
         set_sound_name(notif, sound_name);
@@ -55,6 +58,7 @@ int main(int argc, char** argv) {
     char * subtitle = NULL;
     char * info_text = NULL;
     char * sound_name = NULL;
+    char * bundle_id = NULL;
 
     // check for piped data
     if ( !isatty(STDIN_FILENO) ) {
@@ -87,6 +91,10 @@ int main(int argc, char** argv) {
                 info_text = calloc(sizeof(char), 350);
                 concat_args(info_text, argv, &i, argc);
             }
+            else if ( !strcmp(argv[i], "-bid") ) {
+                bundle_id = calloc(sizeof(char), 250);
+                concat_args(bundle_id, argv, &i, argc);          
+            }
             else if ( !strcmp(argv[i], "-sound") && i < (argc-1)) {
                 sound_name = calloc(sizeof(char), 150);
                 concat_args(sound_name, argv, &i, argc);  
@@ -98,7 +106,7 @@ int main(int argc, char** argv) {
     }
 
     if(title) {
-        if(!send_notification(title, subtitle, info_text, sound_name)) {
+        if(!send_notification(title, subtitle, info_text, bundle_id, sound_name)) {
             puts("Something has gone terribly wrong.");
         }
         free(title);
@@ -112,6 +120,10 @@ int main(int argc, char** argv) {
 
     if(info_text) {
         free(info_text);
+    }
+
+    if(bundle_id) {
+        free(bundle_id);
     }
 
     if(sound_name) {

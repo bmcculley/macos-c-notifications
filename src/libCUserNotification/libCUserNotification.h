@@ -5,6 +5,7 @@
 
 typedef struct S_nsusernotification {
 	id notification;
+	char *bundleID;
 } usernotification_t;
 
 CFStringRef c_cfstr(char * str);
@@ -13,6 +14,7 @@ usernotification_t * new_usernotification();
 void set_title(usernotification_t *notif, char * title);
 void set_subtitle(usernotification_t *notif, char * subtitle);
 void set_info_text(usernotification_t *notif, char * info_text);
+void set_bid(usernotification_t *notif, char * bid);
 void set_sound_name(usernotification_t *notif, char * sound_name);
 void post_notification(usernotification_t *notif);
 
