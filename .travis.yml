@@ -1,13 +1,6 @@
 language: c
-
 os: osx
-
 osx_image: xcode9.2
-
 sudo: false
-
 compiler: clang
-
-install: git submodule update --init --remote --recursive
-
 script: "make static && make test"
