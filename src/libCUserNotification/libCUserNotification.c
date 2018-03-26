@@ -4,20 +4,6 @@ CFStringRef c_cfstr(char * str) {
     return CFStringCreateWithCString(NULL, str, kCFStringEncodingMacRoman);
 }
 
-static Ivar class_getIvarFromString(Class cl, char *ivar_str) {
-    unsigned int count;
-    Ivar *ivars = class_copyIvarList(cl, &count);
-    for (int i = 0; i < count; i++) {
-        Ivar ivar = ivars[i];
-        if(strcmp(ivar_getName(ivar), ivar_str) == 0) {
-            free(ivars);
-            return ivar;
-        }
-    }
-    free(ivars);
-    return NULL;
-}
-
 static void objc_swizzle(Class class, char *sel, Method method) {
     class_replaceMethod(class,
                         sel_registerName(sel),
@@ -31,8 +17,7 @@ static void set_default_bundle_id() {
 }
 
 static void set_custom_bundle_id(id defCenter, CFStringRef bID) {
-    Ivar bidIvar = class_getIvarFromString(object_getClass(defCenter), "_bundleIdentifier");
-    object_setIvar(defCenter, bidIvar, (id)bID);
+    object_setInstanceVariable(defCenter, "_bundleIdentifier", bID);
 }
 
 static id get_default_user_notif_center() {
